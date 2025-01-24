@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDF Viewer in Modal</title>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js';
+    window.pdfjsLib = pdfjsLib;
+  </script>
   <style>
     /* Modal Styles */
     #pdfModal {
@@ -22,12 +27,7 @@
       width: 100%;
       height: 100%;
       background: #fff;
-      overflow: hidden;
-    }
-    .modal-content iframe {
-      width: 100%;
-      height: calc(100% - 50px);
-      border: none;
+      overflow: auto;
     }
     .modal-header {
       position: relative;
@@ -51,6 +51,16 @@
     .modal-header button:hover {
       background: #0056b3;
     }
+    #pdfViewer {
+      width: 100%;
+      height: calc(100% - 50px);
+      overflow: auto;
+      background: #e4e4e4;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+    }
   </style>
 </head>
 <body>
@@ -66,16 +76,38 @@
         <button id="backButton">Back</button>
         <button id="downloadButton">Download</button>
       </div>
-      <iframe id="pdfViewer" src=""></iframe>
+      <div id="pdfViewer"></div>
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js';
+
     $(document).ready(function () {
-      // Open Modal and Load PDF
-      $('.open-modal').on('click', function () {
-        const pdfUrl = $(this).data('pdf'); // Get the PDF URL
-        $('#pdfViewer').attr('src', pdfUrl); // Set iframe src
+      // Open Modal and Render PDF
+      $('.open-modal').on('click', async function () {
+        const pdfUrl = $(this).data('pdf');
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.innerHTML = ''; // Clear previous content
+
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          pdfViewer.appendChild(canvas);
+
+          await page.render({
+            canvasContext: context,
+            viewport: viewport,
+          }).promise;
+        }
+
         $('#downloadButton').data('pdf', pdfUrl); // Attach PDF URL to download button
         $('#pdfModal').fadeIn(); // Show modal
       });
@@ -83,7 +115,7 @@
       // Close Modal with Back Button
       $('#backButton').on('click', function () {
         $('#pdfModal').fadeOut(function () {
-          $('#pdfViewer').attr('src', ''); // Clear iframe src
+          $('#pdfViewer').html(''); // Clear content
         });
       });
 
@@ -100,7 +132,7 @@
       $('#pdfModal').on('click', function (e) {
         if ($(e.target).is('#pdfModal')) {
           $(this).fadeOut(function () {
-            $('#pdfViewer').attr('src', '');
+            $('#pdfViewer').html(''); // Clear content
           });
         }
       });
