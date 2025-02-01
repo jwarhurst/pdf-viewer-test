@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- For mobile, user-scalable remains disabled; adjust as needed -->
+  <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -68,32 +68,28 @@
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1; // Computed based on first page
-
-    // Define min and max scale
     const minScale = 0.5;
     const maxScale = 3;
-    
-    // We'll store original dimensions from the first page.
+
+    // Store original dimensions from first page.
     let originalWidth = 0, originalHeight = 0;
-    
+
     // Variables for pinch handling.
     let initialPinchScale = currentScale;
     let initialScrollLeft = 0, initialScrollTop = 0;
     let pinchCenterX = 0, pinchCenterY = 0;
-    
+
     // Load the PDF and compute initial scale.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
         originalWidth = firstViewport.width;
         originalHeight = firstViewport.height;
-        // Compute initial scale to fit container width.
         currentScale = pdfContainer.clientWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
-        // Set explicit dimensions to match scaled content.
         pdfInner.style.width = (originalWidth * currentScale) + 'px';
         pdfInner.style.height = (originalHeight * currentScale) + 'px';
-        
+
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           pdf.getPage(pageNum).then(page => {
@@ -133,16 +129,35 @@
         }
       });
     });
-    
+
     pdfContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
-    
+
+    // Animate scroll offsets to smooth out the jump.
+    function animateScroll(targetLeft, targetTop, duration = 200) {
+      const startLeft = pdfContainer.scrollLeft;
+      const startTop = pdfContainer.scrollTop;
+      const deltaLeft = targetLeft - startLeft;
+      const deltaTop = targetTop - startTop;
+      const startTime = performance.now();
+
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        pdfContainer.scrollLeft = startLeft + deltaLeft * progress;
+        pdfContainer.scrollTop = startTop + deltaTop * progress;
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
     // Set up Hammer.js for pinch-to-zoom.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     
-    // On pinchstart, record state.
     hammer.on('pinchstart', (ev) => {
       initialPinchScale = currentScale;
       initialScrollLeft = pdfContainer.scrollLeft;
@@ -153,7 +168,7 @@
       pdfInner.style.transformOrigin = `${pinchCenterX}px ${pinchCenterY}px`;
     });
     
-    // During pinch, update only the transform (for smoothness).
+    // During pinch, update the transform continuously.
     hammer.on('pinch', (ev) => {
       let newScale = initialPinchScale * ev.scale;
       if (newScale < minScale) newScale = minScale;
@@ -162,13 +177,15 @@
       pdfInner.style.transform = `scale(${currentScale})`;
     });
     
-    // On pinchend, update the explicit dimensions so the scrollable area grows.
+    // On pinchend, update the explicit dimensions and animate scroll.
     hammer.on('pinchend', (ev) => {
       pdfInner.style.width = (originalWidth * currentScale) + 'px';
       pdfInner.style.height = (originalHeight * currentScale) + 'px';
-      // Optionally, update scroll offsets here if you want to "commit" the pinch center.
-      // For example, you could adjust scrollLeft/Top so that pinchCenter remains at same spot.
-      // That calculation may need fine-tuning; try without it first.
+      // Calculate target scroll offsets to keep the pinch center anchored.
+      const scaleRatio = currentScale / initialPinchScale;
+      const targetScrollLeft = initialScrollLeft + (scaleRatio - 1) * pinchCenterX;
+      const targetScrollTop  = initialScrollTop  + (scaleRatio - 1) * pinchCenterY;
+      animateScroll(targetScrollLeft, targetScrollTop);
     });
   </script>
 </body>
