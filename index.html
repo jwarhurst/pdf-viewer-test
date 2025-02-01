@@ -72,6 +72,12 @@
     }).catch(err => {
       console.error('Error loading PDF:', err);
     });
+
+    pdfLinkService.openExternalLink = function(url) {
+      // Modify the URL as needed—for instance, replacing a domain.
+      const newUrl = url.replace('oldDomain.com', 'newDomain.com');
+      window.open(newUrl, '_blank');
+    };
   </script>
 </body>
 </html>
