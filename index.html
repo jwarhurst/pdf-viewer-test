@@ -23,12 +23,21 @@
       overflow: auto;
       background-color: #eee;
     }    
+
+    #outerContainer {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
+<div id="outerContainer">
   <div id="viewerContainer">
     <div id="viewer" class="pdfViewer"></div>
   </div>
+</div>
   
   <script type="module">
     import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
