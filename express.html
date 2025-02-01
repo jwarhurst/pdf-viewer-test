@@ -34,6 +34,12 @@
     }, document.getElementById('viewer')).then(instance => {
       // Viewer is ready. Pan, zoom, text selection, and hyperlink clicking work.
     });
+
+    Actions.URI.prototype.onTriggered = function(link) {
+    //uriTrigger.apply(this, arguments); // uncomment this to use default functionality
+    
+    console.log(this.uri);
+  };
   </script>
 </body>
 </html>
