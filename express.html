@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Minimal PDF.js Express Demo</title>
-  <link rel="stylesheet" href="https://pdfjs.express/lib/webviewer.min.css">
+  <link rel="stylesheet" href="lib/webviewer.min.css">
   <style>
     html, body, #viewer {
       height: 100%;
@@ -14,10 +14,10 @@
 </head>
 <body>
   <div id="viewer"></div>
-  <script src="https://pdfjs.express/lib/webviewer.min.js"></script>
+  <script src="lib/webviewer.min.js"></script>
   <script>
     WebViewer({
-      path: 'https://pdfjs.express/lib',
+      path: 'lib',
       initialDoc: 'dummy.pdf',
       // Disable extra toolbar items:
       disabledElements: [
