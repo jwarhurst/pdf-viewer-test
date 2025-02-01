@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PDF.js Viewer Example</title>
-  <!-- Use pdf_viewer.min.css from cdnjs -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf_viewer.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF.js ES Module Viewer Example</title>
+  <!-- Use the PDF.js viewer CSS from cdnjs (or you can also get it from jsDelivr) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf_viewer.min.css" />
   <style>
     html, body {
       height: 100%;
@@ -16,9 +16,9 @@
     #viewerContainer {
       position: absolute;
       top: 0;
+      left: 0;
       right: 0;
       bottom: 0;
-      left: 0;
       overflow: auto;
       background-color: #eee;
     }
@@ -33,34 +33,34 @@
     <div id="viewer" class="pdfViewer"></div>
   </div>
   
-  <!-- Use type="module" to import the ES module versions -->
   <script type="module">
-    import { getDocument, GlobalWorkerOptions } from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.es5.min.js';
-    import { PDFViewer, PDFLinkService } from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf_viewer.es5.min.js';
+    // Import PDF.js modules from jsDelivr using the +esm suffix.
+    import { getDocument, GlobalWorkerOptions } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm';
+    import { PDFViewer, PDFLinkService } from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/+esm';
 
     // Set the workerSrc property.
-    GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js';
+    GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.js';
 
     // Create a PDFLinkService instance.
     const pdfLinkService = new PDFLinkService();
 
-    // Get viewer container and viewer elements.
+    // Get the viewer container and viewer elements.
     const container = document.getElementById('viewerContainer');
     const viewer = document.getElementById('viewer');
 
     // Create the PDFViewer instance.
     const pdfViewer = new PDFViewer({
-      container: container,
-      viewer: viewer,
-      removePageBorders: true
+      container,
+      viewer,
+      removePageBorders: true,
     });
 
     // Connect the link service with the viewer.
     pdfViewer.setLinkService(pdfLinkService);
     pdfLinkService.setViewer(pdfViewer);
 
-    // Load the PDF document.
-    const url = 'dummy.pdf'; // your PDF URL
+    // Load your PDF (update the URL as needed).
+    const url = 'dummy.pdf';
     getDocument(url).promise.then(pdfDoc => {
       pdfViewer.setDocument(pdfDoc);
       pdfLinkService.setDocument(pdfDoc, null);
