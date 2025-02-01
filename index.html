@@ -155,9 +155,17 @@
       if (newScale < minScale) newScale = minScale;
       if (newScale > maxScale) newScale = maxScale;
       currentScale = newScale;
+      
+      // Update transform immediately
       pdfInner.style.transform = `scale(${currentScale})`;
       pdfInner.style.width = (originalWidth * currentScale) + 'px';
       pdfInner.style.height = (originalHeight * currentScale) + 'px';
+      
+      // Compute how much the scale has changed relative to pinch start.
+      const scaleRatio = currentScale / initialPinchScale;
+      // Adjust scroll offsets continuously so the pinch center stays anchored.
+      pdfContainer.scrollLeft = initialScrollLeft + (scaleRatio - 1) * pinchCenterX;
+      pdfContainer.scrollTop  = initialScrollTop  + (scaleRatio - 1) * pinchCenterY;
     });
     // On pinchend, update the scroll offsets to keep the pinch center anchored.
     hammer.on('pinchend', (ev) => {
