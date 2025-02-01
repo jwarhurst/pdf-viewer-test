@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Yarn</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable Again</title>
   <style>
     html, body {
       height: 100%;
@@ -28,12 +28,12 @@
     canvas {
       display: block;
     }
-    /* Updated textLayer styling for selectable text */
+    /* Text layer styling for selectable text */
     .textLayer {
       position: absolute;
       top: 0;
       left: 0;
-      pointer-events: auto; /* Allow text selection */
+      pointer-events: auto;
       user-select: text;
       z-index: 2;
     }
@@ -41,8 +41,7 @@
       white-space: pre;
       pointer-events: auto;
       user-select: text;
-      /* Make text invisible yet selectable:
-         The text will be rendered via text-shadow */
+      /* Make text invisible but selectable */
       color: transparent;
       text-shadow: 0 0 0 black;
     }
@@ -69,7 +68,7 @@
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
 
-    // Create a shared eventBus for text layers
+    // Create a shared eventBus (if needed)
     const eventBus = new pdfjsViewer.EventBus();
 
     // Load all pages from the PDF
@@ -100,20 +99,22 @@
           
           pdfInner.appendChild(pageContainer);
           
-          // Render the page on canvas
+          // Render the page into the canvas
           const renderContext = { canvasContext: context, viewport: viewport };
           page.render(renderContext);
           
           // Render the selectable text layer
           page.getTextContent().then(textContent => {
-            const textLayer = new pdfjsViewer.TextLayerBuilder({
-              textLayerDiv: textLayerDiv,
-              pageIndex: pageNum - 1,
-              viewport: viewport,
-              eventBus: eventBus
-            });
-            textLayer.setTextContent(textContent);
-            textLayer.render();
+            const textLayerFactory = new pdfjsViewer.DefaultTextLayerFactory();
+            const textLayerBuilder = textLayerFactory.createTextLayerBuilder(
+              textLayerDiv,
+              pageNum - 1,
+              viewport,
+              eventBus
+            );
+            // Assign the textContent directly, then render.
+            textLayerBuilder.textContent = textContent;
+            textLayerBuilder.render();
           });
         });
       }
