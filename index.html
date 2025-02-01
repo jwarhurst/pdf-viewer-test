@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- For mobile, user-scalable remains disabled; adjust as needed -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Testing123</title>
+  <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
   <style>
@@ -63,20 +63,30 @@
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1; // Will be computed based on first page width
+    const minScale = 0.5;
+    const maxScale = 3;
 
-    // Load the PDF and then compute initial scale based on the first page.
+    // We'll store original dimensions from the first page.
+    let originalWidth = 0, originalHeight = 0;
+
+    // Load the PDF and compute initial scale.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       // Get the first page to compute initial scale.
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
-        // Compute scale so first page fits container width.
-        currentScale = (pdfContainer.clientWidth) / firstViewport.width;
+        originalWidth = firstViewport.width;
+        originalHeight = firstViewport.height;
+        currentScale = pdfContainer.clientWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
+        // Set pdfInner's dimensions so that the scrollable area reflects the scaled content.
+        pdfInner.style.width = (originalWidth * currentScale) + 'px';
+        pdfInner.style.height = (originalHeight * currentScale) + 'px';
 
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -103,7 +113,6 @@
             pdfInner.appendChild(pageContainer);
             
             page.render({ canvasContext: context, viewport: viewport });
-            
             page.getTextContent().then(textContent => {
               pdfjsLib.renderTextLayer({
                 textContentSource: textContent,
@@ -119,25 +128,32 @@
       });
     });
 
-    // For iOS: prevent default on multi-touch so that single-finger scroll works.
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) { e.preventDefault(); }
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     }, { passive: false });
 
-    // Set up Hammer.js for pinch-to-zoom (earlier behavior: update transform only).
+    // Set up Hammer.js for pinch-to-zoom.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialPinchScale = currentScale;
     hammer.on('pinchstart', (ev) => {
       initialPinchScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
+      // Calculate transform origin relative to container.
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
     hammer.on('pinch', (ev) => {
       currentScale = initialPinchScale * ev.scale;
+      if (currentScale < minScale) currentScale = minScale;
+      if (currentScale > maxScale) currentScale = maxScale;
       pdfInner.style.transform = `scale(${currentScale})`;
+      // Update the explicit dimensions so the scroll area grows.
+      pdfInner.style.width = (originalWidth * currentScale) + 'px';
+      pdfInner.style.height = (originalHeight * currentScale) + 'px';
     });
   </script>
 </body>
