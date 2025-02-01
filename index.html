@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- For mobile, adjust meta viewport as needed -->
+  <!-- For mobile, user-scalable remains disabled; adjust as needed -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -14,14 +14,12 @@
       overflow: hidden;
       background-color: #eee;
     }
-    /* Container has padding */
     #pdf-container {
       height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       position: relative;
       padding: 20px;
-      box-sizing: border-box;
     }
     #pdf-inner {
       transform-origin: 0 0;
@@ -70,24 +68,20 @@
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1; // Will be computed based on first page width and container padding
+    let currentScale = 1; // Will be computed based on first page width
 
+    // Define min and max scale values (optional)
     const minScale = 0.5;
     const maxScale = 3;
-    const containerPadding = 20; // same as in #pdf-container
 
-    // Load the PDF and compute initial scale based on first page.
+    // Load the PDF and then compute initial scale based on the first page.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+      // Get the first page to compute initial scale.
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
-        // Compute inner width by subtracting left+right padding.
-        const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
-        // Compute scale so first page fits the inner width.
-        currentScale = innerWidth / firstViewport.width;
+        // Compute scale so first page fits container width.
+        currentScale = (pdfContainer.clientWidth) / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
-        // Position pdfInner at the container's padding offset.
-        pdfInner.style.left = containerPadding + 'px';
-        pdfInner.style.top = containerPadding + 'px';
 
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -114,6 +108,7 @@
             pdfInner.appendChild(pageContainer);
             
             page.render({ canvasContext: context, viewport: viewport });
+            
             page.getTextContent().then(textContent => {
               pdfjsLib.renderTextLayer({
                 textContentSource: textContent,
@@ -130,7 +125,9 @@
     });
 
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) { e.preventDefault(); }
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     }, { passive: false });
 
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
@@ -138,4 +135,17 @@
     let initialPinchScale = currentScale;
     hammer.on('pinchstart', (ev) => {
       initialPinchScale = currentScale;
-      const re
+      const rect = pdfContainer.getBoundingClientRect();
+      const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
+      const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
+      pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
+    });
+    hammer.on('pinch', (ev) => {
+      currentScale = initialPinchScale * ev.scale;
+      if (currentScale < minScale) currentScale = minScale;
+      if (currentScale > maxScale) currentScale = maxScale;
+      pdfInner.style.transform = `scale(${currentScale})`;
+    });
+  </script>
+</body>
+</html>
