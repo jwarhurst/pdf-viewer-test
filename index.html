@@ -2,21 +2,19 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDF.js v3.11.174 Sample App - All Pages</title>
+  <!-- Disable native pinch zoom -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PDF.js v3.11.174 Sample App - All Pages (iOS Fixed)</title>
   <style>
-    /* Scrollable container */
     #pdf-container {
       height: 100vh;
       overflow: auto;
-      background: #f0f0f0;
-      touch-action: none;
+      -webkit-overflow-scrolling: touch;
+      /* Remove touch-action: none to allow scrolling */
     }
-    /* Inner container for PDF pages */
     #pdf-inner {
       transform-origin: 0 0;
     }
-    /* Optional: separate pages with margin */
     .pdf-page {
       margin-bottom: 20px;
     }
@@ -27,21 +25,19 @@
     <div id="pdf-inner"></div>
   </div>
 
-  <!-- Load pdf.js v3.11.174 and Hammer.js -->
+  <!-- Load pdf.js and Hammer.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
   <script>
-    // Set up pdf.js worker
+    // Configure pdf.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
 
-    // Load the PDF document
+    // Load all pages from the PDF
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-      // Loop through each page
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
@@ -50,28 +46,28 @@
           const context = canvas.getContext('2d');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-
-          // Append canvas to container
           pdfInner.appendChild(canvas);
 
-          const renderContext = {
-            canvasContext: context,
-            viewport: viewport
-          };
+          const renderContext = { canvasContext: context, viewport: viewport };
           page.render(renderContext);
         });
       }
     });
 
-    // Set up Hammer.js for pinch-to-zoom
-    const hammer = new Hammer(pdfContainer);
+    // For iOS: only prevent default on multi-touch so that single-finger scroll works.
+    pdfContainer.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Set up Hammer.js for pinch-to-zoom on the container
+    const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialScale = currentScale;
-
     hammer.on('pinchstart', () => {
       initialScale = currentScale;
     });
-
     hammer.on('pinch', (ev) => {
       currentScale = initialScale * ev.scale;
       pdfInner.style.transform = `scale(${currentScale})`;
