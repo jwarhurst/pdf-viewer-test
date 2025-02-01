@@ -20,10 +20,14 @@
       -webkit-overflow-scrolling: touch;
       position: relative;
       padding: 20px;
+      box-sizing: border-box;
     }
     #pdf-inner {
       transform-origin: 0 0;
       position: relative;
+      /* No extra offset needed; container padding already applies */
+      left: 0;
+      top: 0;
     }
     .pageContainer {
       position: relative;
@@ -69,7 +73,7 @@
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1; // Will be computed based on first page width
-    const containerPadding = 20; // our left/right padding value
+    const containerPadding = 20; // the container's padding
 
     // Define min and max scale values (optional)
     const minScale = 0.5;
@@ -80,13 +84,11 @@
       // Get the first page to compute initial scale.
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
-        // Compute inner width = total width minus left+right padding.
+        // Compute inner width: subtract padding on both sides.
         const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
         currentScale = innerWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
-        // Offset pdfInner so it aligns perfectly inside the padded container.
-        pdfInner.style.left = containerPadding + 'px';
-        pdfInner.style.top = containerPadding + 'px';
+        // No additional left/top offset needed since container padding handles that.
 
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
