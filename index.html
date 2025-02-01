@@ -64,7 +64,7 @@
       }
     }, { passive: false });
 
-    // Set up Hammer.js for pinch-to-zoom with relative zoom center
+    // Set up Hammer.js for pinch-to-zoom with dynamic transform origin
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialScale = currentScale;
@@ -72,8 +72,9 @@
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      const originX = ev.center.x - rect.left;
-      const originY = ev.center.y - rect.top;
+      // Include container's scroll offsets so the origin is relative to the inner content
+      const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
+      const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
 
