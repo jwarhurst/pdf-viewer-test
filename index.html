@@ -5,6 +5,8 @@
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
+  <!-- Use pdf_viewer.min.css from cdnjs -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
   <style>
     html, body {
       height: 100%;
@@ -28,7 +30,7 @@
     canvas {
       display: block;
     }
-    /* Text layer styling – similar to the official viewer */
+    /* Additional custom textLayer styling if needed */
     .textLayer {
       position: absolute;
       top: 0;
@@ -87,7 +89,7 @@
           textLayerDiv.className = 'textLayer';
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
-          // IMPORTANT: set the CSS variable --scale-factor to match viewport.scale.
+          // Set the CSS variable --scale-factor to match viewport.scale.
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
           pageContainer.appendChild(textLayerDiv);
           
@@ -99,9 +101,9 @@
           // Render the selectable text layer using the helper.
           page.getTextContent().then(textContent => {
             pdfjsLib.renderTextLayer({
-              textContent: textContent,
+              textContentSource: textContent, // Using textContentSource per deprecation notice
               container: textLayerDiv,
-              viewport: viewport,
+              viewport: viewport.clone({ dontFlip: true }),
               textDivs: []
             }).promise.then(() => {
               console.log(`Text layer rendered for page ${pageNum}`);
