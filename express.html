@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Minimal PDF.js Express Demo</title>
-  <link rel="stylesheet" href="https://pdfjs.express/webviewer.min.css">
+  <link rel="stylesheet" href="https://pdfjs.express/lib/webviewer.min.css">
   <style>
     html, body, #viewer {
       height: 100%;
@@ -14,13 +14,12 @@
 </head>
 <body>
   <div id="viewer"></div>
-  <script src="https://pdfjs.express/webviewer.min.js"></script>
+  <script src="https://pdfjs.express/lib/webviewer.min.js"></script>
   <script>
     WebViewer({
-      // Using the CDN-hosted lib for the free tier:
       path: 'https://pdfjs.express/lib',
       initialDoc: 'dummy.pdf',
-      // Disable UI elements we don't need:
+      // Disable extra toolbar items:
       disabledElements: [
         'openFileButton',
         'printButton',
@@ -33,9 +32,7 @@
         'notesPanel'
       ]
     }, document.getElementById('viewer')).then(instance => {
-      // The viewer is ready.
-      // Pan/zoom are available (zoom controls remain visible),
-      // text selection is enabled by default and hyperlinks work.
+      // Viewer is ready. Pan, zoom, text selection, and hyperlink clicking work.
     });
   </script>
 </body>
