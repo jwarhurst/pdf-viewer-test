@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Again</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable Text</title>
   <style>
     html, body {
       height: 100%;
@@ -68,8 +68,8 @@
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
 
-    // Create a shared eventBus (if needed)
-    const eventBus = new pdfjsViewer.EventBus();
+    // Create a shared eventBus (from pdf_viewer)
+    const eventBus = new window.pdfjsViewer.EventBus();
 
     // Load all pages from the PDF
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
@@ -105,16 +105,16 @@
           
           // Render the selectable text layer
           page.getTextContent().then(textContent => {
-            const textLayerFactory = new pdfjsViewer.DefaultTextLayerFactory();
-            const textLayerBuilder = textLayerFactory.createTextLayerBuilder(
-              textLayerDiv,
-              pageNum - 1,
-              viewport,
-              eventBus
-            );
-            // Assign the textContent directly, then render.
-            textLayerBuilder.textContent = textContent;
-            textLayerBuilder.render();
+            // Use the TextLayerBuilder directly from pdfjsViewer.
+            const textLayer = new window.pdfjsViewer.TextLayerBuilder({
+              textLayerDiv: textLayerDiv,
+              pageIndex: pageNum - 1,
+              viewport: viewport,
+              eventBus: eventBus
+            });
+            // Assign the text content directly
+            textLayer.textContent = textContent;
+            textLayer.render();
           });
         });
       }
