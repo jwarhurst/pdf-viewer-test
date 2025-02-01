@@ -4,24 +4,41 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App - Full Screen</title>
+  <title>PDF.js v3.11.174 Sample App with Text Layer</title>
   <style>
     html, body {
       height: 100%;
       margin: 0;
-      overflow: hidden; /* Hide body scrollbar */
+      overflow: hidden;
     }
     #pdf-container {
       height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+      position: relative;
     }
     #pdf-inner {
       transform-origin: 0 0;
+      position: relative;
     }
-    .pdf-page {
-      display: block;
+    .pageContainer {
+      position: relative;
       margin: 0 auto 20px;
+    }
+    canvas {
+      display: block;
+    }
+    .textLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      /* Ensure text appears above canvas */
+      pointer-events: none;
+      color: transparent;
+    }
+    /* When selecting, we want text to be selectable */
+    .textLayer ::selection {
+      background: rgba(0, 0, 255, 0.3);
     }
   </style>
 </head>
@@ -30,7 +47,7 @@
     <div id="pdf-inner"></div>
   </div>
 
-  <!-- Load pdf.js v3.11.174 and Hammer.js -->
+  <!-- Load pdf.js and Hammer.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
   <script>
@@ -50,20 +67,47 @@
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
+          
+          // Create a container for the page that will hold both canvas and text layer
+          const pageContainer = document.createElement('div');
+          pageContainer.className = 'pageContainer';
+          pageContainer.style.width = viewport.width + 'px';
+          pageContainer.style.height = viewport.height + 'px';
+          
+          // Create canvas and render page into it
           const canvas = document.createElement('canvas');
-          canvas.className = 'pdf-page';
-          const context = canvas.getContext('2d');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          pdfInner.appendChild(canvas);
-
+          const context = canvas.getContext('2d');
+          
+          // Create text layer container
+          const textLayerDiv = document.createElement('div');
+          textLayerDiv.className = 'textLayer';
+          textLayerDiv.style.width = viewport.width + 'px';
+          textLayerDiv.style.height = viewport.height + 'px';
+          
+          // Append canvas and text layer to the page container
+          pageContainer.appendChild(canvas);
+          pageContainer.appendChild(textLayerDiv);
+          pdfInner.appendChild(pageContainer);
+          
           const renderContext = { canvasContext: context, viewport: viewport };
           page.render(renderContext);
+          
+          // Render text layer for selectable text
+          page.getTextContent().then(textContent => {
+            pdfjsLib.renderTextLayer({
+              textContent: textContent,
+              container: textLayerDiv,
+              viewport: viewport,
+              textDivs: []
+            });
+          });
         });
       }
     });
 
-    // For iOS: only prevent default on multi-touch so that single-finger scroll works.
+    // For iOS: prevent default only on multi-touch (to allow single-finger scroll)
     pdfContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length > 1) {
         e.preventDefault();
@@ -77,7 +121,7 @@
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Calculate origin relative to pdfInner content
+      // Adjust for container's scroll so the origin is relative to content
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
