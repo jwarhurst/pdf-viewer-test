@@ -1,64 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PDF.js ES Module Viewer via unpkg</title>
-  <link rel="stylesheet" href="https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.css" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background-color: #eee;
-    }
-    #viewerContainer {
-      position: absolute;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      overflow: auto;
-      background-color: #eee;
-    }
-    /* Optional: remove page borders */
-    .pdfViewer .page {
-      border: none;
-    }
-  </style>
-</head>
-<body>
-  <div id="viewerContainer">
-    <div id="viewer" class="pdfViewer"></div>
-  </div>
+<script type="module">
+  import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
+  import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
 
-  <script type="module">
-    import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
-    import { PDFViewer, PDFLinkService } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
+  GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
 
-    GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+  // Create the EventBus instance.
+  const eventBus = new EventBus();
 
-    const pdfLinkService = new PDFLinkService();
+  // Create the PDFLinkService.
+  const pdfLinkService = new PDFLinkService({ eventBus });
 
-    const container = document.getElementById('viewerContainer');
-    const viewer = document.getElementById('viewer');
+  // Get the container elements.
+  const container = document.getElementById('viewerContainer');
+  const viewer = document.getElementById('viewer');
 
-    const pdfViewer = new PDFViewer({
-      container,
-      viewer,
-      removePageBorders: true,
-    });
+  // Create the PDFViewer, passing the eventBus.
+  const pdfViewer = new PDFViewer({
+    container,
+    viewer,
+    eventBus,
+    removePageBorders: true,
+  });
 
-    pdfViewer.setLinkService(pdfLinkService);
-    pdfLinkService.setViewer(pdfViewer);
+  pdfViewer.setLinkService(pdfLinkService);
+  pdfLinkService.setViewer(pdfViewer);
 
-    const url = 'dummy.pdf'; // Replace with your PDF URL
-    getDocument(url).promise.then(pdfDoc => {
-      pdfViewer.setDocument(pdfDoc);
-      pdfLinkService.setDocument(pdfDoc, null);
-    }).catch(err => {
-      console.error('Error loading PDF:', err);
-    });
-  </script>
-</body>
-</html>
+  // Load the PDF.
+  const url = 'dummy.pdf';
+  getDocument(url).promise.then(pdfDoc => {
+    pdfViewer.setDocument(pdfDoc);
+    pdfLinkService.setDocument(pdfDoc, null);
+  }).catch(err => {
+    console.error('Error loading PDF:', err);
+  });
+</script>
