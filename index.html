@@ -61,7 +61,7 @@
   <script>
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
-
+    
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
@@ -70,15 +70,35 @@
     let currentScale = 1; // Computed based on first page
     const minScale = 0.5;
     const maxScale = 3;
-
+    
     // Store original dimensions from first page.
     let originalWidth = 0, originalHeight = 0;
-
+    
     // Variables for pinch handling.
     let initialPinchScale = currentScale;
     let initialScrollLeft = 0, initialScrollTop = 0;
     let pinchCenterX = 0, pinchCenterY = 0;
-
+    
+    // Animate scroll offsets.
+    function animateScroll(targetLeft, targetTop, duration = 200) {
+      const startLeft = pdfContainer.scrollLeft;
+      const startTop = pdfContainer.scrollTop;
+      const deltaLeft = targetLeft - startLeft;
+      const deltaTop = targetTop - startTop;
+      const startTime = performance.now();
+    
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        pdfContainer.scrollLeft = startLeft + deltaLeft * progress;
+        pdfContainer.scrollTop = startTop + deltaTop * progress;
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+    
     // Load the PDF and compute initial scale.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       pdf.getPage(1).then(page => {
@@ -89,8 +109,8 @@
         pdfInner.style.transform = `scale(${currentScale})`;
         pdfInner.style.width = (originalWidth * currentScale) + 'px';
         pdfInner.style.height = (originalHeight * currentScale) + 'px';
-
-        // Now load all pages.
+    
+        // Load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           pdf.getPage(pageNum).then(page => {
             const viewport = page.getViewport({ scale: 1 });
@@ -129,31 +149,11 @@
         }
       });
     });
-
+    
     pdfContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
-
-    // Animate scroll offsets to smooth out the jump.
-    function animateScroll(targetLeft, targetTop, duration = 200) {
-      const startLeft = pdfContainer.scrollLeft;
-      const startTop = pdfContainer.scrollTop;
-      const deltaLeft = targetLeft - startLeft;
-      const deltaTop = targetTop - startTop;
-      const startTime = performance.now();
-
-      function step(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        pdfContainer.scrollLeft = startLeft + deltaLeft * progress;
-        pdfContainer.scrollTop = startTop + deltaTop * progress;
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        }
-      }
-      requestAnimationFrame(step);
-    }
-
+    
     // Set up Hammer.js for pinch-to-zoom.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
@@ -168,7 +168,7 @@
       pdfInner.style.transformOrigin = `${pinchCenterX}px ${pinchCenterY}px`;
     });
     
-    // During pinch, update the transform continuously.
+    // During pinch, update transform continuously.
     hammer.on('pinch', (ev) => {
       let newScale = initialPinchScale * ev.scale;
       if (newScale < minScale) newScale = minScale;
@@ -177,14 +177,13 @@
       pdfInner.style.transform = `scale(${currentScale})`;
     });
     
-    // On pinchend, update the explicit dimensions and animate scroll.
+    // On pinchend, update dimensions and animate scroll using the anchoring formula.
     hammer.on('pinchend', (ev) => {
       pdfInner.style.width = (originalWidth * currentScale) + 'px';
       pdfInner.style.height = (originalHeight * currentScale) + 'px';
-      // Calculate target scroll offsets to keep the pinch center anchored.
       const scaleRatio = currentScale / initialPinchScale;
-      const targetScrollLeft = initialScrollLeft + (scaleRatio - 1) * pinchCenterX;
-      const targetScrollTop  = initialScrollTop  + (scaleRatio - 1) * pinchCenterY;
+      const targetScrollLeft = scaleRatio * (initialScrollLeft + pinchCenterX) - pinchCenterX;
+      const targetScrollTop  = scaleRatio * (initialScrollTop  + pinchCenterY) - pinchCenterY;
       animateScroll(targetScrollLeft, targetScrollTop);
     });
   </script>
