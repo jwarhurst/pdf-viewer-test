@@ -34,43 +34,4 @@
   </div>
   
   <script type="module">
-    // Import PDF.js modules from unpkg.
-    import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
-    import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
-    
-    // Set the workerSrc to the ES module worker.
-    GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
-    
-    // Create an EventBus instance.
-    const eventBus = new EventBus();
-    
-    // Create the PDFLinkService instance, passing the event bus.
-    const pdfLinkService = new PDFLinkService({ eventBus });
-    
-    // Get the container elements.
-    const container = document.getElementById('viewerContainer');
-    const viewer = document.getElementById('viewer');
-    
-    // Create the PDFViewer instance.
-    const pdfViewer = new PDFViewer({
-      container: container,
-      viewer: viewer,
-      eventBus: eventBus,
-      removePageBorders: true,  // Optional: remove page borders.
-    });
-    
-    // Connect the link service with the viewer.
-    pdfViewer.setLinkService(pdfLinkService);
-    pdfLinkService.setViewer(pdfViewer);
-    
-    // Load your PDF document.
-    const url = 'dummy.pdf'; // Replace with your PDF URL if needed.
-    getDocument(url).promise.then(pdfDoc => {
-      pdfViewer.setDocument(pdfDoc);
-      pdfLinkService.setDocument(pdfDoc, null);
-    }).catch(err => {
-      console.error('Error loading PDF:', err);
-    });
-  </script>
-</body>
-</html>
+  
