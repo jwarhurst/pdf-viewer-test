@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- For mobile, user-scalable remains disabled -->
+  <!-- For mobile, you might remove user-scalable=no if needed -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -12,14 +12,14 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
-      background-color: #eee;  /* Light grey background */
+      background-color: #eee;
     }
     #pdf-container {
       height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       position: relative;
-      padding: 20px;  /* Space around pages */
+      padding: 20px;
     }
     #pdf-inner {
       transform-origin: 0 0;
@@ -28,10 +28,9 @@
     .pageContainer {
       position: relative;
       margin: 0 auto 20px;
-      background-color: #fff;  /* White page */
-      border: 1px solid #ccc;  /* Light border */
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);  /* Subtle shadow */
-      /* Removed padding to keep canvas & text layer aligned */
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     canvas {
       display: block;
@@ -64,13 +63,18 @@
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    // Set up pdf.js worker.
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1;
+    let currentScale = 1; // Starting scale
 
+    // Define min and max scale values
+    const minScale = 0.5;
+    const maxScale = 3;
+
+    // Load all pages from the PDF.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
@@ -79,22 +83,24 @@
           pageContainer.className = 'pageContainer';
           pageContainer.style.width = viewport.width + 'px';
           pageContainer.style.height = viewport.height + 'px';
-
+          
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           const context = canvas.getContext('2d');
           pageContainer.appendChild(canvas);
-
+          
           const textLayerDiv = document.createElement('div');
           textLayerDiv.className = 'textLayer';
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
           pageContainer.appendChild(textLayerDiv);
-
+          
           pdfInner.appendChild(pageContainer);
+          
           page.render({ canvasContext: context, viewport: viewport });
+          
           page.getTextContent().then(textContent => {
             pdfjsLib.renderTextLayer({
               textContentSource: textContent,
@@ -110,7 +116,9 @@
     });
 
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) { e.preventDefault(); }
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
     }, { passive: false });
 
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
@@ -124,7 +132,10 @@
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
     hammer.on('pinch', (ev) => {
+      // Calculate new scale and clamp it.
       currentScale = initialScale * ev.scale;
+      if (currentScale < minScale) currentScale = minScale;
+      if (currentScale > maxScale) currentScale = maxScale;
       pdfInner.style.transform = `scale(${currentScale})`;
     });
   </script>
