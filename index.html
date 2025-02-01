@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Text Helper</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable Text</title>
   <style>
     html, body {
       height: 100%;
@@ -28,21 +28,15 @@
     canvas {
       display: block;
     }
-    /* Text layer styling for selectable text */
+    /* Text layer styling – these rules mimic what the official viewer uses */
     .textLayer {
       position: absolute;
       top: 0;
       left: 0;
       pointer-events: auto;
       user-select: text;
-      z-index: 2;
-    }
-    .textLayer span {
-      white-space: pre;
-      pointer-events: auto;
-      user-select: text;
-      /* Make text invisible but selectable */
       color: transparent;
+      /* The text-shadow trick makes the invisible text appear via selection */
       text-shadow: 0 0 0 black;
     }
   </style>
@@ -61,7 +55,7 @@
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
 
-    // Configure pdf.js worker
+    // Set up pdf.js worker.
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
@@ -69,68 +63,70 @@
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
 
-    // Load all pages from the PDF
+    // Load all pages from the PDF.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
-
-          // Create container for canvas and text layer
+          
+          // Create container for canvas and text layer.
           const pageContainer = document.createElement('div');
           pageContainer.className = 'pageContainer';
+          // Set explicit dimensions based on the viewport.
           pageContainer.style.width = viewport.width + 'px';
           pageContainer.style.height = viewport.height + 'px';
-
-          // Create and append canvas
+          
+          // Create and append canvas.
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
+          const context = canvas.getContext('2d');
           pageContainer.appendChild(canvas);
-
-          // Create and append text layer container
+          
+          // Create and append text layer container.
           const textLayerDiv = document.createElement('div');
           textLayerDiv.className = 'textLayer';
+          // Ensure the text layer container matches the page dimensions.
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
           pageContainer.appendChild(textLayerDiv);
-
+          
+          // Append this page to the inner container.
           pdfInner.appendChild(pageContainer);
-
-          // Render page into canvas
-          const renderContext = {
-            canvasContext: canvas.getContext('2d'),
-            viewport: viewport
-          };
-          page.render(renderContext);
-
-          // Render selectable text layer using the helper function.
+          
+          // Render the page into the canvas.
+          page.render({ canvasContext: context, viewport: viewport });
+          
+          // Render the selectable text layer using the helper.
           page.getTextContent().then(textContent => {
             pdfjsLib.renderTextLayer({
               textContent: textContent,
               container: textLayerDiv,
               viewport: viewport,
-              textDivs: [] // This will be populated by renderTextLayer.
+              textDivs: []
+            }).promise.then(() => {
+              console.log(`Text layer rendered for page ${pageNum}`);
             });
           });
         });
       }
     });
 
-    // For iOS: prevent default on multi-touch so single-finger scroll works
+    // For iOS: prevent default on multi-touch so single-finger scroll works.
     pdfContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length > 1) {
         e.preventDefault();
       }
     }, { passive: false });
 
-    // Set up Hammer.js for pinch-to-zoom with dynamic transform origin
+    // Set up Hammer.js for pinch-to-zoom with dynamic transform origin.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialScale = currentScale;
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Account for scroll offsets so the origin is relative to content
+      // Adjust origin to account for container scroll.
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
