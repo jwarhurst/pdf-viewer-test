@@ -61,8 +61,12 @@
       container,
       viewer,
       eventBus,
-      linkService: pdfLinkService,
-      defaultZoomValue: 0.5
+      linkService: pdfLinkService
+    });
+
+    eventBus.on("pagesinit", function () {
+      // We can use pdfViewer now, e.g. let's change default scale.
+      pdfViewer.currentScaleValue = "page-width";
     });
 
     // Connect the link service with the viewer.
