@@ -15,12 +15,13 @@
 </head>
 <body>
   <div id="viewer"></div>
+  <script src="js/pdfjsexpress-config.js"></script>
   <script src="lib/webviewer.min.js"></script>
   <script>
     WebViewer({
       path: 'lib',
       initialDoc: 'dummy.pdf',
-      licenseKey: 'RarPa4Tq2E1ZwX83RxHl',
+      licenseKey: config.licenseKey,
       // Disable extra toolbar items:
       disabledElements: [
         'openFileButton',
@@ -31,15 +32,18 @@
         'annotationButton',
         'notesPanel'
       ]
-    }, document.getElementById('viewer')).then(instance => {
+    }, 
+    
+    document.getElementById('viewer')).then(instance => {
       // Viewer is ready. Pan, zoom, text selection, and hyperlink clicking work.
+      
+      Actions.URI.prototype.onTriggered = function(link) {
+        //uriTrigger.apply(this, arguments); // uncomment this to use default functionality
+        console.log(this.uri);
+      };
     });
 
-    Actions.URI.prototype.onTriggered = function(link) {
-    //uriTrigger.apply(this, arguments); // uncomment this to use default functionality
     
-    console.log(this.uri);
-  };
   </script>
 </body>
 </html>
