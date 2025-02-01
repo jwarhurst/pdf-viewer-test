@@ -13,16 +13,17 @@
       overflow: hidden;
       background-color: #eee;
     }
+    /* Use position: fixed to ensure full screen */
     #viewerContainer {
-      position: absolute;
+      position: fixed;
       top: 0;
+      left: 0;
       right: 0;
       bottom: 0;
-      left: 0;
       overflow: auto;
       background-color: #eee;
     }
-    /* Page borders will be shown (no removal) */
+    /* Optional: page borders */
     .pdfViewer .page {
       border: 1px solid #ccc;
     }
@@ -34,7 +35,7 @@
   </div>
   
   <script type="module">
-    // Import the ES module versions from unpkg.
+    // Import ES module versions from unpkg.
     import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
     import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
     
@@ -47,17 +48,17 @@
     // Create the PDFLinkService instance.
     const pdfLinkService = new PDFLinkService({ eventBus });
     
-    // Get the viewer container and viewer elements.
+    // Get container elements.
     const container = document.getElementById('viewerContainer');
     const viewer = document.getElementById('viewer');
     
-    // Create the PDFViewer instance with defaultZoomValue set to 'page-width'.
+    // Create the PDFViewer instance.
     const pdfViewer = new PDFViewer({
       container,
       viewer,
       eventBus,
       linkService: pdfLinkService,
-      defaultZoomValue: 'page-width' // This makes the first page fit the width.
+      defaultZoomValue: 'page-width' // Ask PDF.js to fit the page width.
     });
     
     // Connect the link service with the viewer.
