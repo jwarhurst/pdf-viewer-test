@@ -61,8 +61,7 @@
       container,
       viewer,
       eventBus,
-      linkService: pdfLinkService,
-      defaultZoomValue: 'page-fit'
+      linkService: pdfLinkService
     });
 
     // Connect the link service with the viewer.
@@ -73,8 +72,7 @@
     getDocument(url).promise.then(pdfDoc => {
       pdfViewer.setDocument(pdfDoc);
       pdfLinkService.setDocument(pdfDoc, null);
-      // Force the viewer to recalc the scale.
-      pdfViewer.currentScaleValue = 'page-fit';
+      
     }).catch(err => {
       console.error('Error loading PDF:', err);
     });
