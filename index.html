@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>PDF.js ES Module Viewer</title>
   <!-- Use the PDF.js viewer CSS from unpkg -->
   <link rel="stylesheet" href="https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.css" />
@@ -10,9 +10,18 @@
     html, body {      
       background-color: #eee;
       -webkit-text-size-adjust: none;
-      touch-action: pan-x pan-y;
+      overflow: hidden;
+      height: 100%;
+      margin: 0;
+      padding: 0;
     }
-    /* Ensure the container fills the viewport */
+
+    /* Prevent zooming on non-zoomable elements */
+    #mob-ico-pdf-back, #mob-ico-pdf-help, #mob-ico-pdf-share, #mob-ico-pdf-email {
+      touch-action: none; /* Disable pinch-zoom on these elements */
+    }
+
+    /* Ensure the container fills the viewport and allows zooming */
     #viewerContainer {
       position: absolute;
       top: 0;
@@ -21,8 +30,8 @@
       bottom: 0;
       overflow: auto;
       background-color: #eee;
+      touch-action: pan-x pan-y; /* Allow panning and zooming */
     }    
-
   </style>
 </head>
 <body>
