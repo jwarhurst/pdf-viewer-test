@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- For mobile, user-scalable remains disabled here, but you can adjust as needed -->
+  <!-- For mobile, user-scalable remains disabled -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -19,7 +19,7 @@
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       position: relative;
-      padding: 20px;  /* Give some space around pages */
+      padding: 20px;  /* Space around pages */
     }
     #pdf-inner {
       transform-origin: 0 0;
@@ -28,11 +28,10 @@
     .pageContainer {
       position: relative;
       margin: 0 auto 20px;
-      width: fit-content;
-      background-color: #fff; /* White page */
-      border: 1px solid #ccc; /* Light border */
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle shadow */
-      padding: 10px; /* Optional padding to simulate page margin */
+      background-color: #fff;  /* White page */
+      border: 1px solid #ccc;  /* Light border */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);  /* Subtle shadow */
+      /* Removed padding to keep canvas & text layer aligned */
     }
     canvas {
       display: block;
@@ -65,47 +64,37 @@
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
 
-    // Set up pdf.js worker.
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1; // Starting scale
+    let currentScale = 1;
 
-    // Load all pages from the PDF.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
-          
-          // Create container for canvas and text layer.
           const pageContainer = document.createElement('div');
           pageContainer.className = 'pageContainer';
           pageContainer.style.width = viewport.width + 'px';
           pageContainer.style.height = viewport.height + 'px';
-          
-          // Create and append canvas.
+
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
           const context = canvas.getContext('2d');
           pageContainer.appendChild(canvas);
-          
-          // Create and append text layer container.
+
           const textLayerDiv = document.createElement('div');
           textLayerDiv.className = 'textLayer';
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
           pageContainer.appendChild(textLayerDiv);
-          
+
           pdfInner.appendChild(pageContainer);
-          
-          // Render the page into the canvas.
           page.render({ canvasContext: context, viewport: viewport });
-          
-          // Render the selectable text layer.
           page.getTextContent().then(textContent => {
             pdfjsLib.renderTextLayer({
               textContentSource: textContent,
@@ -120,14 +109,10 @@
       }
     });
 
-    // For iOS: prevent default on multi-touch so single-finger scroll works.
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
+      if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
 
-    // Set up Hammer.js for pinch-to-zoom with dynamic transform origin.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialScale = currentScale;
