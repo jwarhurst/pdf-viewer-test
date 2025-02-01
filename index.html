@@ -20,6 +20,7 @@
       -webkit-overflow-scrolling: touch;
       position: relative;
       padding: 20px;
+      box-sizing: border-box;
     }
     #pdf-inner {
       transform-origin: 0 0;
@@ -64,14 +65,17 @@
     
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1; // Computed based on first page
+    
+    let currentScale = 1; // computed based on first page
     const minScale = 0.5;
     const maxScale = 3;
+    const containerPadding = 20; // as defined in CSS
     
-    // Store original dimensions from first page.
+    // We'll store original dimensions from the first page.
     let originalWidth = 0, originalHeight = 0;
     
     // Variables for pinch handling.
@@ -79,38 +83,21 @@
     let initialScrollLeft = 0, initialScrollTop = 0;
     let pinchCenterX = 0, pinchCenterY = 0;
     
-    // Animate scroll offsets.
-    function animateScroll(targetLeft, targetTop, duration = 200) {
-      const startLeft = pdfContainer.scrollLeft;
-      const startTop = pdfContainer.scrollTop;
-      const deltaLeft = targetLeft - startLeft;
-      const deltaTop = targetTop - startTop;
-      const startTime = performance.now();
-    
-      function step(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        pdfContainer.scrollLeft = startLeft + deltaLeft * progress;
-        pdfContainer.scrollTop = startTop + deltaTop * progress;
-        if (progress < 1) {
-          requestAnimationFrame(step);
-        }
-      }
-      requestAnimationFrame(step);
-    }
-    
     // Load the PDF and compute initial scale.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
         originalWidth = firstViewport.width;
         originalHeight = firstViewport.height;
-        currentScale = pdfContainer.clientWidth / firstViewport.width;
+        // Compute inner width excluding container padding.
+        const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
+        currentScale = innerWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
+        // Set explicit dimensions so that the scrollable area reflects the scaled content.
         pdfInner.style.width = (originalWidth * currentScale) + 'px';
         pdfInner.style.height = (originalHeight * currentScale) + 'px';
     
-        // Load all pages.
+        // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           pdf.getPage(pageNum).then(page => {
             const viewport = page.getViewport({ scale: 1 });
@@ -163,28 +150,38 @@
       initialScrollLeft = pdfContainer.scrollLeft;
       initialScrollTop = pdfContainer.scrollTop;
       const rect = pdfContainer.getBoundingClientRect();
+      // Compute pinch center relative to container.
       pinchCenterX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       pinchCenterY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${pinchCenterX}px ${pinchCenterY}px`;
     });
     
-    // During pinch, update transform continuously.
+    // Continuously update transform, layout dimensions, and scroll offsets.
     hammer.on('pinch', (ev) => {
       let newScale = initialPinchScale * ev.scale;
       if (newScale < minScale) newScale = minScale;
       if (newScale > maxScale) newScale = maxScale;
       currentScale = newScale;
+      
+      // Update transform and dimensions.
       pdfInner.style.transform = `scale(${currentScale})`;
-    });
-    
-    // On pinchend, update dimensions and animate scroll using the anchoring formula.
-    hammer.on('pinchend', (ev) => {
       pdfInner.style.width = (originalWidth * currentScale) + 'px';
       pdfInner.style.height = (originalHeight * currentScale) + 'px';
+      
+      // Compute scale ratio relative to pinch start.
       const scaleRatio = currentScale / initialPinchScale;
+      // Calculate target scroll offsets so the pinch center remains anchored.
       const targetScrollLeft = scaleRatio * (initialScrollLeft + pinchCenterX) - pinchCenterX;
       const targetScrollTop  = scaleRatio * (initialScrollTop  + pinchCenterY) - pinchCenterY;
-      animateScroll(targetScrollLeft, targetScrollTop);
+      
+      pdfContainer.scrollLeft = targetScrollLeft;
+      pdfContainer.scrollTop = targetScrollTop;
+    });
+    
+    // On pinchend, you could simply leave the values as-is.
+    hammer.on('pinchend', (ev) => {
+      // Optionally, you could animate or finalize here.
+      // For now, we simply leave the scroll positions as updated.
     });
   </script>
 </body>
