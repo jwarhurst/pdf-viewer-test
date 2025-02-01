@@ -6,7 +6,7 @@
   <title>Minimal PDF.js Express Demo</title>
   <link rel="stylesheet" href="lib/ui/webviewer.min.css">
   <style>
-    html, body, #viewer {
+    html, body {
       height: 100%;
       margin: 0;
       padding: 0;
@@ -24,12 +24,10 @@
       // Disable extra toolbar items:
       disabledElements: [
         'openFileButton',
-        'printButton',
-        'downloadButton',
+        //'printButton',
+        //'downloadButton',
         'searchButton',
-        'viewControlsButton',
-        'textSelectButton',
-        'panToolButton',
+        'viewControlsButton',        
         'annotationButton',
         'notesPanel'
       ]
