@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- Disable native pinch zoom -->
+  <!-- For mobile, you might remove user-scalable=no to allow native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -30,12 +30,15 @@
     canvas {
       display: block;
     }
-    /* Additional custom textLayer styling if needed */
+    /* Additional vendor prefixes for mobile text selection */
     .textLayer {
       position: absolute;
       top: 0;
       left: 0;
       pointer-events: auto;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
       user-select: text;
       color: transparent;
       text-shadow: 0 0 0 black;
@@ -68,7 +71,6 @@
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
-          // Use the scale you want (here it's 1)
           const viewport = page.getViewport({ scale: 1 });
           
           // Create container for canvas and text layer.
@@ -89,7 +91,6 @@
           textLayerDiv.className = 'textLayer';
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
-          // Set the CSS variable --scale-factor to match viewport.scale.
           textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
           pageContainer.appendChild(textLayerDiv);
           
@@ -98,10 +99,10 @@
           // Render the page into the canvas.
           page.render({ canvasContext: context, viewport: viewport });
           
-          // Render the selectable text layer using the helper.
+          // Render the selectable text layer.
           page.getTextContent().then(textContent => {
             pdfjsLib.renderTextLayer({
-              textContentSource: textContent, // Using textContentSource per deprecation notice
+              textContentSource: textContent,
               container: textLayerDiv,
               viewport: viewport.clone({ dontFlip: true }),
               textDivs: []
@@ -127,7 +128,6 @@
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Adjust origin to account for container scroll.
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
