@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable Text Helper</title>
   <style>
     html, body {
       height: 100%;
@@ -62,57 +62,55 @@
     console.log('App Version:', appVersion);
 
     // Configure pdf.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
-
-    // Create a shared eventBus (from pdf_viewer)
-    const eventBus = new window.pdfjsViewer.EventBus();
 
     // Load all pages from the PDF
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
-          
-          // Container for canvas and text layer
+
+          // Create container for canvas and text layer
           const pageContainer = document.createElement('div');
           pageContainer.className = 'pageContainer';
           pageContainer.style.width = viewport.width + 'px';
           pageContainer.style.height = viewport.height + 'px';
-          
+
           // Create and append canvas
           const canvas = document.createElement('canvas');
           canvas.width = viewport.width;
           canvas.height = viewport.height;
-          const context = canvas.getContext('2d');
           pageContainer.appendChild(canvas);
-          
+
           // Create and append text layer container
           const textLayerDiv = document.createElement('div');
           textLayerDiv.className = 'textLayer';
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
           pageContainer.appendChild(textLayerDiv);
-          
+
           pdfInner.appendChild(pageContainer);
-          
-          // Render the page into the canvas
-          const renderContext = { canvasContext: context, viewport: viewport };
+
+          // Render page into canvas
+          const renderContext = {
+            canvasContext: canvas.getContext('2d'),
+            viewport: viewport
+          };
           page.render(renderContext);
-          
-          // Render the selectable text layer with textContentSource parameter
+
+          // Render selectable text layer using the helper function.
           page.getTextContent().then(textContent => {
-            const textLayer = new window.pdfjsViewer.TextLayerBuilder({
-              textLayerDiv: textLayerDiv,
-              pageIndex: pageNum - 1,
+            pdfjsLib.renderTextLayer({
+              textContent: textContent,
+              container: textLayerDiv,
               viewport: viewport,
-              eventBus: eventBus,
-              textContentSource: textContent
+              textDivs: [] // This will be populated by renderTextLayer.
             });
-            textLayer.render();
           });
         });
       }
@@ -132,7 +130,7 @@
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Account for scroll offsets so origin is relative to content
+      // Account for scroll offsets so the origin is relative to content
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
