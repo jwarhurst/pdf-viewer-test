@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PDF.js ES Module Viewer</title>
+  <title>PDF.js ES Module Viewer (100vh)</title>
   <!-- Use the PDF.js viewer CSS from unpkg -->
   <link rel="stylesheet" href="https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.css" />
   <style>
@@ -13,17 +13,13 @@
       overflow: hidden;
       background-color: #eee;
     }
-    /* Use position: fixed to ensure full screen */
     #viewerContainer {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      height: 100vh;
+      width: 100vw;
       overflow: auto;
       background-color: #eee;
     }
-    /* Optional: page borders */
+    /* Page borders enabled */
     .pdfViewer .page {
       border: 1px solid #ccc;
     }
@@ -35,11 +31,11 @@
   </div>
   
   <script type="module">
-    // Import ES module versions from unpkg.
+    // Import ES modules from unpkg.
     import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
     import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
     
-    // Set the workerSrc.
+    // Set workerSrc.
     GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
     
     // Create an EventBus.
@@ -52,19 +48,19 @@
     const container = document.getElementById('viewerContainer');
     const viewer = document.getElementById('viewer');
     
-    // Create the PDFViewer instance.
+    // Create the PDFViewer instance with defaultZoomValue 'page-width'.
     const pdfViewer = new PDFViewer({
       container,
       viewer,
       eventBus,
       linkService: pdfLinkService,
-      defaultZoomValue: 'page-width' // Ask PDF.js to fit the page width.
+      defaultZoomValue: 'page-width'
     });
     
     // Connect the link service with the viewer.
     pdfLinkService.setViewer(pdfViewer);
     
-    // Load your PDF document.
+    // Load your PDF.
     const url = 'dummy.pdf'; // Replace with your PDF URL.
     getDocument(url).promise.then(pdfDoc => {
       pdfViewer.setDocument(pdfDoc);
