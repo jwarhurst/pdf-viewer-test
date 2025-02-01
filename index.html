@@ -22,9 +22,9 @@
       overflow: auto;
       background-color: #eee;
     }
-    /* Optional: remove page borders */
+    /* Page borders will be shown (no removal) */
     .pdfViewer .page {
-      border: none;
+      border: 1px solid #ccc;
     }
   </style>
 </head>
@@ -34,36 +34,36 @@
   </div>
   
   <script type="module">
-    // Import ES module versions from unpkg.
+    // Import the ES module versions from unpkg.
     import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
     import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
-
+    
     // Set the workerSrc.
     GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
-
+    
     // Create an EventBus.
     const eventBus = new EventBus();
-
-    // Create a PDFLinkService instance, passing in the eventBus.
+    
+    // Create the PDFLinkService instance.
     const pdfLinkService = new PDFLinkService({ eventBus });
-
-    // Get container elements.
+    
+    // Get the viewer container and viewer elements.
     const container = document.getElementById('viewerContainer');
     const viewer = document.getElementById('viewer');
-
-    // Create the PDFViewer instance, passing the linkService as an option.
+    
+    // Create the PDFViewer instance with defaultZoomValue set to 'page-width'.
     const pdfViewer = new PDFViewer({
       container,
       viewer,
       eventBus,
       linkService: pdfLinkService,
-      removePageBorders: true, // optional
+      defaultZoomValue: 'page-width' // This makes the first page fit the width.
     });
-
-    // No need to call setLinkService because it’s already in the options.
-    // pdfLinkService.setViewer(pdfViewer); // you can call this if necessary, but often not.
-
-    // Load the PDF document.
+    
+    // Connect the link service with the viewer.
+    pdfLinkService.setViewer(pdfViewer);
+    
+    // Load your PDF document.
     const url = 'dummy.pdf'; // Replace with your PDF URL.
     getDocument(url).promise.then(pdfDoc => {
       pdfViewer.setDocument(pdfDoc);
