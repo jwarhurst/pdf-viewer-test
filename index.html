@@ -69,31 +69,31 @@
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1;
-
+    let currentScale = 1; // Will be computed based on first page width
     const minScale = 0.5;
     const maxScale = 3;
-    const containerPadding = 20; // Padding in pdf-container
+    const containerPadding = 20; // Padding value
 
+    // Variables for handling pinch
     let originalWidth, originalHeight;
     let initialPinchScale = 1;
     let initialScrollLeft = 0, initialScrollTop = 0;
     let pinchCenterX = 0, pinchCenterY = 0;
 
-    // Load PDF and compute initial scale based on the first page.
+    // Load PDF and compute initial scale.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
         const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
         currentScale = innerWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
-        // Set initial dimensions based on first page.
         originalWidth = firstViewport.width;
         originalHeight = firstViewport.height;
         pdfInner.style.width = (originalWidth * currentScale) + 'px';
         pdfInner.style.height = (originalHeight * currentScale) + 'px';
+        // Note: Since the container already has padding, we don't offset pdfInner.
 
-        // Load remaining pages (similar to baseline).
+        // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           pdf.getPage(pageNum).then(page => {
             const viewport = page.getViewport({ scale: 1 });
@@ -137,7 +137,7 @@
       if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
 
-    // Hammer.js for pinch-to-zoom with anchored pinch center.
+    // Set up Hammer.js for pinch-to-zoom.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     hammer.on('pinchstart', (ev) => {
@@ -145,11 +145,11 @@
       initialScrollLeft = pdfContainer.scrollLeft;
       initialScrollTop = pdfContainer.scrollTop;
       const rect = pdfContainer.getBoundingClientRect();
-      // Compute pinch center relative to container.
       pinchCenterX = ev.center.x - rect.left;
       pinchCenterY = ev.center.y - rect.top;
       pdfInner.style.transformOrigin = `${pinchCenterX}px ${pinchCenterY}px`;
     });
+    // During pinch, just update the scale visually.
     hammer.on('pinch', (ev) => {
       let newScale = initialPinchScale * ev.scale;
       if (newScale < minScale) newScale = minScale;
@@ -158,11 +158,13 @@
       pdfInner.style.transform = `scale(${currentScale})`;
       pdfInner.style.width = (originalWidth * currentScale) + 'px';
       pdfInner.style.height = (originalHeight * currentScale) + 'px';
-      
-      // Adjust scroll offsets so the pinch center remains fixed.
-      // This formula shifts scroll by the difference induced by scaling.
-      pdfContainer.scrollLeft = initialScrollLeft + (currentScale / initialPinchScale - 1) * pinchCenterX;
-      pdfContainer.scrollTop  = initialScrollTop  + (currentScale / initialPinchScale - 1) * pinchCenterY;
+    });
+    // On pinchend, update the scroll offsets to keep the pinch center anchored.
+    hammer.on('pinchend', (ev) => {
+      // Calculate relative offsets.
+      const scaleRatio = currentScale / initialPinchScale;
+      pdfContainer.scrollLeft = initialScrollLeft + (scaleRatio - 1) * pinchCenterX;
+      pdfContainer.scrollTop  = initialScrollTop  + (scaleRatio - 1) * pinchCenterY;
     });
   </script>
 </body>
