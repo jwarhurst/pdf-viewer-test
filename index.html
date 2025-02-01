@@ -13,20 +13,16 @@
       overflow: hidden;
       background-color: #eee;
     }
-    /* Container must be absolutely positioned */
+    /* Ensure the container fills the viewport */
     #viewerContainer {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      right: 0;
+      bottom: 0;
       overflow: auto;
       background-color: #eee;
-    }
-    /* Optional: keep page borders */
-    .pdfViewer .page {
-      border: 1px solid #ccc;
-    }
+    }    
   </style>
 </head>
 <body>
@@ -35,24 +31,23 @@
   </div>
   
   <script type="module">
-    // Import modules from unpkg.
     import { getDocument, GlobalWorkerOptions } from 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.mjs';
     import { PDFViewer, PDFLinkService, EventBus } from 'https://unpkg.com/pdfjs-dist@4.10.38/web/pdf_viewer.mjs';
-    
+
     // Set the workerSrc.
     GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
-    
+
     // Create an EventBus.
     const eventBus = new EventBus();
-    
-    // Create a PDFLinkService instance.
+
+    // Create the PDFLinkService instance.
     const pdfLinkService = new PDFLinkService({ eventBus });
-    
+
     // Get container elements.
     const container = document.getElementById('viewerContainer');
     const viewer = document.getElementById('viewer');
-    
-    // Create the PDFViewer instance.
+
+    // Create the PDFViewer instance. We'll set defaultZoomValue to 'page-width'.
     const pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -60,15 +55,17 @@
       linkService: pdfLinkService,
       defaultZoomValue: 'page-width'
     });
-    
+
     // Connect the link service with the viewer.
     pdfLinkService.setViewer(pdfViewer);
-    
-    // Load the PDF document.
-    const url = 'dummy.pdf'; // Replace with your PDF URL.
+
+    // Load the PDF.
+    const url = 'dummy.pdf';  // Replace with your PDF URL
     getDocument(url).promise.then(pdfDoc => {
       pdfViewer.setDocument(pdfDoc);
       pdfLinkService.setDocument(pdfDoc, null);
+      // Force the viewer to recalc the scale.
+      pdfViewer.currentScaleValue = 'page-width';
     }).catch(err => {
       console.error('Error loading PDF:', err);
     });
