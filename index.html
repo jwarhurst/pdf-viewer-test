@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Text</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable</title>
   <style>
     html, body {
       height: 100%;
@@ -103,17 +103,15 @@
           const renderContext = { canvasContext: context, viewport: viewport };
           page.render(renderContext);
           
-          // Render the selectable text layer
+          // Render the selectable text layer with textContentSource parameter
           page.getTextContent().then(textContent => {
-            // Use the TextLayerBuilder directly from pdfjsViewer.
             const textLayer = new window.pdfjsViewer.TextLayerBuilder({
               textLayerDiv: textLayerDiv,
               pageIndex: pageNum - 1,
               viewport: viewport,
-              eventBus: eventBus
+              eventBus: eventBus,
+              textContentSource: textContent
             });
-            // Assign the text content directly
-            textLayer.textContent = textContent;
             textLayer.render();
           });
         });
