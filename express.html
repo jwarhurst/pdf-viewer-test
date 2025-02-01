@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Minimal PDF.js Express Demo</title>
+  <link rel="stylesheet" href="https://pdfjs.express/webviewer.min.css">
+  <style>
+    html, body, #viewer {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewer"></div>
+  <script src="https://pdfjs.express/webviewer.min.js"></script>
+  <script>
+    WebViewer({
+      // Using the CDN-hosted lib for the free tier:
+      path: 'https://pdfjs.express/lib',
+      initialDoc: 'dummy.pdf',
+      // Disable UI elements we don't need:
+      disabledElements: [
+        'openFileButton',
+        'printButton',
+        'downloadButton',
+        'searchButton',
+        'viewControlsButton',
+        'textSelectButton',
+        'panToolButton',
+        'annotationButton',
+        'notesPanel'
+      ]
+    }, document.getElementById('viewer')).then(instance => {
+      // The viewer is ready.
+      // Pan/zoom are available (zoom controls remain visible),
+      // text selection is enabled by default and hyperlinks work.
+    });
+  </script>
+</body>
+</html>
