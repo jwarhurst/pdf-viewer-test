@@ -25,9 +25,7 @@
     #pdf-inner {
       transform-origin: 0 0;
       position: relative;
-      /* No extra offset needed; container padding already applies */
-      left: 0;
-      top: 0;
+      /* We'll update its explicit width/height on zoom */
     }
     .pageContainer {
       position: relative;
@@ -73,22 +71,32 @@
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1; // Will be computed based on first page width
-    const containerPadding = 20; // the container's padding
 
     // Define min and max scale values (optional)
     const minScale = 0.5;
     const maxScale = 3;
+
+    // Variables for dynamic scroll handling during pinch
+    let originalWidth, originalHeight;
+    let initialPinchScale = 1;
+    let initialScrollLeft = 0, initialScrollTop = 0;
 
     // Load the PDF and then compute initial scale based on the first page.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       // Get the first page to compute initial scale.
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
-        // Compute inner width: subtract padding on both sides.
-        const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
-        currentScale = innerWidth / firstViewport.width;
+        // Compute scale so first page fits container width (ignoring padding)
+        currentScale = pdfContainer.clientWidth / firstViewport.width;
+        // Apply initial transform.
         pdfInner.style.transform = `scale(${currentScale})`;
-        // No additional left/top offset needed since container padding handles that.
+        // Set the scrollable area explicitly using the unscaled dimensions.
+        // We'll assume that pdfInner's unscaled dimensions equal the size of the first page container.
+        originalWidth = firstViewport.width;
+        originalHeight = firstViewport.height;
+        // (If there are multiple pages of varying sizes, you might compute a bounding box instead.)
+        pdfInner.style.width = (originalWidth * currentScale) + 'px';
+        pdfInner.style.height = (originalHeight * currentScale) + 'px';
 
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -132,26 +140,39 @@
     });
 
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
+      if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
 
+    // Set up Hammer.js for pinch-to-zoom.
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
-    let initialPinchScale = currentScale;
     hammer.on('pinchstart', (ev) => {
+      // Store the initial scale and scroll offsets.
       initialPinchScale = currentScale;
+      initialScrollLeft = pdfContainer.scrollLeft;
+      initialScrollTop = pdfContainer.scrollTop;
+      // (Optionally, update the transformOrigin here as well.)
       const rect = pdfContainer.getBoundingClientRect();
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
     hammer.on('pinch', (ev) => {
-      currentScale = initialPinchScale * ev.scale;
-      if (currentScale < minScale) currentScale = minScale;
-      if (currentScale > maxScale) currentScale = maxScale;
+      let newScale = initialPinchScale * ev.scale;
+      if (newScale < minScale) newScale = minScale;
+      if (newScale > maxScale) newScale = maxScale;
+      currentScale = newScale;
       pdfInner.style.transform = `scale(${currentScale})`;
+      // Update the explicit dimensions of pdfInner so that the container's scroll area grows.
+      pdfInner.style.width = (originalWidth * currentScale) + 'px';
+      pdfInner.style.height = (originalHeight * currentScale) + 'px';
+      
+      // Adjust scroll offsets to maintain the same relative position:
+      // Calculate relative scroll from pinchstart.
+      const relativeLeft = initialScrollLeft / (originalWidth * initialPinchScale);
+      const relativeTop = initialScrollTop / (originalHeight * initialPinchScale);
+      pdfContainer.scrollLeft = relativeLeft * (originalWidth * currentScale);
+      pdfContainer.scrollTop = relativeTop * (originalHeight * currentScale);
     });
   </script>
 </body>
