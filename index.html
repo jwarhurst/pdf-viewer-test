@@ -2,26 +2,50 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- Disable native pinch zoom -->
+  <!-- For mobile, user-scalable remains disabled; adjust as needed -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App - Full Screen</title>
+  <title>Text</title>
+  <!-- Use pdf_viewer.min.css from cdnjs -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
   <style>
     html, body {
       height: 100%;
       margin: 0;
-      overflow: hidden; /* Hide body scrollbar */
+      overflow: hidden;
+      background-color: #eee;
     }
     #pdf-container {
       height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
+      position: relative;
+      padding: 20px;
     }
     #pdf-inner {
       transform-origin: 0 0;
+      position: relative;
     }
-    .pdf-page {
-      display: block;
+    .pageContainer {
+      position: relative;
       margin: 0 auto 20px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    canvas {
+      display: block;
+    }
+    .textLayer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+      color: transparent;
+      text-shadow: 0 0 0 black;
     }
   </style>
 </head>
@@ -30,60 +54,89 @@
     <div id="pdf-inner"></div>
   </div>
 
-  <!-- Load pdf.js v3.11.174 and Hammer.js -->
+  <!-- Load pdf.js, pdf_viewer, and Hammer.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
   <script>
     // Version info
     const appVersion = 'v3.11.174-test-2025-01-31';
     console.log('App Version:', appVersion);
 
-    // Configure pdf.js worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1;
+    let currentScale = 1; // Will be computed based on first page width
 
-    // Load all pages from the PDF
+    // Load the PDF and then compute initial scale based on the first page.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        pdf.getPage(pageNum).then(page => {
-          const viewport = page.getViewport({ scale: 1 });
-          const canvas = document.createElement('canvas');
-          canvas.className = 'pdf-page';
-          const context = canvas.getContext('2d');
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          pdfInner.appendChild(canvas);
+      // Get the first page to compute initial scale.
+      pdf.getPage(1).then(page => {
+        const firstViewport = page.getViewport({ scale: 1 });
+        // Compute scale so first page fits container width.
+        currentScale = (pdfContainer.clientWidth) / firstViewport.width;
+        pdfInner.style.transform = `scale(${currentScale})`;
 
-          const renderContext = { canvasContext: context, viewport: viewport };
-          page.render(renderContext);
-        });
-      }
+        // Now load all pages.
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          pdf.getPage(pageNum).then(page => {
+            const viewport = page.getViewport({ scale: 1 });
+            const pageContainer = document.createElement('div');
+            pageContainer.className = 'pageContainer';
+            pageContainer.style.width = viewport.width + 'px';
+            pageContainer.style.height = viewport.height + 'px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+            pageContainer.appendChild(canvas);
+            
+            const textLayerDiv = document.createElement('div');
+            textLayerDiv.className = 'textLayer';
+            textLayerDiv.style.width = viewport.width + 'px';
+            textLayerDiv.style.height = viewport.height + 'px';
+            textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
+            pageContainer.appendChild(textLayerDiv);
+            
+            pdfInner.appendChild(pageContainer);
+            
+            page.render({ canvasContext: context, viewport: viewport });
+            
+            page.getTextContent().then(textContent => {
+              pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: viewport.clone({ dontFlip: true }),
+                textDivs: []
+              }).promise.then(() => {
+                console.log(`Text layer rendered for page ${pageNum}`);
+              });
+            });
+          });
+        }
+      });
     });
 
-    // For iOS: only prevent default on multi-touch so that single-finger scroll works.
+    // For iOS: prevent default on multi-touch so that single-finger scroll works.
     pdfContainer.addEventListener('touchstart', function(e) {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
+      if (e.touches.length > 1) { e.preventDefault(); }
     }, { passive: false });
 
-    // Set up Hammer.js for pinch-to-zoom with dynamic transform origin
+    // Set up Hammer.js for pinch-to-zoom (earlier behavior: update transform only).
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
-    let initialScale = currentScale;
+    let initialPinchScale = currentScale;
     hammer.on('pinchstart', (ev) => {
-      initialScale = currentScale;
+      initialPinchScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Calculate origin relative to pdfInner content
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
     hammer.on('pinch', (ev) => {
-      currentScale = initialScale * ev.scale;
+      currentScale = initialPinchScale * ev.scale;
       pdfInner.style.transform = `scale(${currentScale})`;
     });
   </script>
