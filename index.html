@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Text</title>
+  <title>PDF.js v3.11.174 Sample App with Selectable Yarn</title>
   <style>
     html, body {
       height: 100%;
@@ -28,12 +28,23 @@
     canvas {
       display: block;
     }
-    /* Text layer: no longer using pointer-events: none or transparent color so text is selectable */
+    /* Updated textLayer styling for selectable text */
     .textLayer {
       position: absolute;
       top: 0;
       left: 0;
-      overflow: hidden;
+      pointer-events: auto; /* Allow text selection */
+      user-select: text;
+      z-index: 2;
+    }
+    .textLayer span {
+      white-space: pre;
+      pointer-events: auto;
+      user-select: text;
+      /* Make text invisible yet selectable:
+         The text will be rendered via text-shadow */
+      color: transparent;
+      text-shadow: 0 0 0 black;
     }
   </style>
 </head>
@@ -58,7 +69,7 @@
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1;
 
-    // Create a shared eventBus for the text layers
+    // Create a shared eventBus for text layers
     const eventBus = new pdfjsViewer.EventBus();
 
     // Load all pages from the PDF
@@ -67,7 +78,7 @@
         pdf.getPage(pageNum).then(page => {
           const viewport = page.getViewport({ scale: 1 });
           
-          // Create container for both canvas and text layer
+          // Container for canvas and text layer
           const pageContainer = document.createElement('div');
           pageContainer.className = 'pageContainer';
           pageContainer.style.width = viewport.width + 'px';
@@ -89,11 +100,11 @@
           
           pdfInner.appendChild(pageContainer);
           
-          // Render the PDF page into the canvas
+          // Render the page on canvas
           const renderContext = { canvasContext: context, viewport: viewport };
           page.render(renderContext);
           
-          // Render the text layer
+          // Render the selectable text layer
           page.getTextContent().then(textContent => {
             const textLayer = new pdfjsViewer.TextLayerBuilder({
               textLayerDiv: textLayerDiv,
@@ -108,7 +119,7 @@
       }
     });
 
-    // For iOS: prevent default on multi-touch so single-finger scroll works.
+    // For iOS: prevent default on multi-touch so single-finger scroll works
     pdfContainer.addEventListener('touchstart', function(e) {
       if (e.touches.length > 1) {
         e.preventDefault();
@@ -122,7 +133,7 @@
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Factor in scroll offsets so the origin is relative to content
+      // Account for scroll offsets so origin is relative to content
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
