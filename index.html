@@ -1,144 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Viewer in Modal</title>
-  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <script type="module">
-    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.mjs';
-    window.pdfjsLib = pdfjsLib;
-  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PDF.js v3.11.174 Sample App</title>
   <style>
-    /* Modal Styles */
-    #pdfModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 9999;
-    }
-    .modal-content {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      background: #fff;
+    /* Scrollable container */
+    #pdf-container {
+      height: 100vh;
       overflow: auto;
+      background: #f0f0f0;
+      touch-action: none; /* For custom gestures */
     }
-    .modal-header {
-      position: relative;
-      height: 50px;
-      background: #f4f4f4;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 15px;
-      border-bottom: 1px solid #ccc;
-      -webkit-text-size-adjust: 100%;
-      touch-action: manipulation;
-    }
-    .modal-header button {
-      font-size: 16px;
-      padding: 10px 15px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      touch-action: manipulation;
-    }
-    .modal-header button:hover {
-      background: #0056b3;
-    }
-    #pdfViewer {
-      width: 100%;
-      height: calc(100% - 50px);
-      overflow: auto;
-      background: #e4e4e4;
-    }
-    canvas {
-      display: block;
-      margin: 0 auto;
+    /* Inner container for PDF content */
+    #pdf-inner {
+      transform-origin: 0 0; /* Scale from top-left */
     }
   </style>
 </head>
 <body>
-  <!-- Trigger Button -->
-  <button class="open-modal" data-pdf="dummy.pdf">
-    Open PDF
-  </button>
-
-  <!-- Modal -->
-  <div id="pdfModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button id="backButton">Back</button>
-        <button id="downloadButton">Download</button>
-      </div>
-      <div id="pdfViewer"></div>
-    </div>
+  <div id="pdf-container">
+    <div id="pdf-inner"></div>
   </div>
 
-  <script type="module">
-    import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.mjs';
+  <!-- Load pdf.js v3.11.174 and Hammer.js from CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+  <script>
+    // Configure the pdf.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    $(document).ready(function () {
-      // Open Modal and Render PDF
-      $('.open-modal').on('click', async function () {
-        const pdfUrl = $(this).data('pdf');
-        const pdfViewer = document.getElementById('pdfViewer');
-        pdfViewer.innerHTML = ''; // Clear previous content
+    const pdfUrl = 'dummy.pdf'; // Your PDF file
+    const pdfContainer = document.getElementById('pdf-container');
+    const pdfInner = document.getElementById('pdf-inner');
+    let currentScale = 1; // Initial scale
 
-        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 1 });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+    // Load and render the first page of the PDF
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+      pdf.getPage(1).then(page => {
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        pdfInner.appendChild(canvas);
 
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          pdfViewer.appendChild(canvas);
-
-          await page.render({
-            canvasContext: context,
-            viewport: viewport,
-          }).promise;
-        }
-
-        $('#downloadButton').data('pdf', pdfUrl); // Attach PDF URL to download button
-        $('#pdfModal').fadeIn(); // Show modal
+        const renderContext = { canvasContext: context, viewport: viewport };
+        page.render(renderContext);
       });
+    });
 
-      // Close Modal with Back Button
-      $('#backButton').on('click', function () {
-        $('#pdfModal').fadeOut(function () {
-          $('#pdfViewer').html(''); // Clear content
-        });
-      });
+    // Set up Hammer.js for pinch-to-zoom gestures on the container
+    const hammer = new Hammer(pdfContainer);
+    hammer.get('pinch').set({ enable: true });
+    let initialScale = currentScale;
 
-      // Download PDF
-      $('#downloadButton').on('click', function () {
-        const pdfUrl = $(this).data('pdf'); // Get the attached PDF URL
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = 'document.pdf';
-        link.click();
-      });
+    hammer.on('pinchstart', () => {
+      initialScale = currentScale;
+    });
 
-      // Close Modal on Background Click
-      $('#pdfModal').on('click', function (e) {
-        if ($(e.target).is('#pdfModal')) {
-          $(this).fadeOut(function () {
-            $('#pdfViewer').html(''); // Clear content
-          });
-        }
-      });
+    hammer.on('pinch', (ev) => {
+      currentScale = initialScale * ev.scale;
+      pdfInner.style.transform = `scale(${currentScale})`;
     });
   </script>
 </body>
