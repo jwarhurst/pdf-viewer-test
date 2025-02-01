@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App with Selectable Text</title>
+  <title>Text</title>
   <style>
     html, body {
       height: 100%;
@@ -28,7 +28,7 @@
     canvas {
       display: block;
     }
-    /* Text layer styling – these rules mimic what the official viewer uses */
+    /* Text layer styling – similar to the official viewer */
     .textLayer {
       position: absolute;
       top: 0;
@@ -36,7 +36,6 @@
       pointer-events: auto;
       user-select: text;
       color: transparent;
-      /* The text-shadow trick makes the invisible text appear via selection */
       text-shadow: 0 0 0 black;
     }
   </style>
@@ -61,18 +60,18 @@
     const pdfUrl = 'dummy.pdf';
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
-    let currentScale = 1;
+    let currentScale = 1; // Starting scale
 
     // Load all pages from the PDF.
     pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         pdf.getPage(pageNum).then(page => {
+          // Use the scale you want (here it's 1)
           const viewport = page.getViewport({ scale: 1 });
           
           // Create container for canvas and text layer.
           const pageContainer = document.createElement('div');
           pageContainer.className = 'pageContainer';
-          // Set explicit dimensions based on the viewport.
           pageContainer.style.width = viewport.width + 'px';
           pageContainer.style.height = viewport.height + 'px';
           
@@ -86,12 +85,12 @@
           // Create and append text layer container.
           const textLayerDiv = document.createElement('div');
           textLayerDiv.className = 'textLayer';
-          // Ensure the text layer container matches the page dimensions.
           textLayerDiv.style.width = viewport.width + 'px';
           textLayerDiv.style.height = viewport.height + 'px';
+          // IMPORTANT: set the CSS variable --scale-factor to match viewport.scale.
+          textLayerDiv.style.setProperty('--scale-factor', viewport.scale);
           pageContainer.appendChild(textLayerDiv);
           
-          // Append this page to the inner container.
           pdfInner.appendChild(pageContainer);
           
           // Render the page into the canvas.
