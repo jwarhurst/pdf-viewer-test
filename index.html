@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <!-- For mobile, you might remove user-scalable=no to allow native pinch zoom -->
+  <!-- For mobile, user-scalable remains disabled here, but you can adjust as needed -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Text</title>
   <!-- Use pdf_viewer.min.css from cdnjs -->
@@ -12,12 +12,14 @@
       height: 100%;
       margin: 0;
       overflow: hidden;
+      background-color: #eee;  /* Light grey background */
     }
     #pdf-container {
       height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       position: relative;
+      padding: 20px;  /* Give some space around pages */
     }
     #pdf-inner {
       transform-origin: 0 0;
@@ -26,11 +28,15 @@
     .pageContainer {
       position: relative;
       margin: 0 auto 20px;
+      width: fit-content;
+      background-color: #fff; /* White page */
+      border: 1px solid #ccc; /* Light border */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle shadow */
+      padding: 10px; /* Optional padding to simulate page margin */
     }
     canvas {
       display: block;
     }
-    /* Additional vendor prefixes for mobile text selection */
     .textLayer {
       position: absolute;
       top: 0;
