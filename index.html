@@ -4,10 +4,15 @@
   <meta charset="UTF-8" />
   <!-- Disable native pinch zoom -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>PDF.js v3.11.174 Sample App - All Pages (iOS Fixed)</title>
+  <title>PDF.js v3.11.174 Sample App - Full Screen</title>
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden; /* Hide body scrollbar */
+    }
     #pdf-container {
-      height: 100vh;
+      height: 100%;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -15,7 +20,8 @@
       transform-origin: 0 0;
     }
     .pdf-page {
-      margin-bottom: 20px;
+      display: block;
+      margin: 0 auto 20px;
     }
   </style>
 </head>
@@ -24,7 +30,7 @@
     <div id="pdf-inner"></div>
   </div>
 
-  <!-- Load pdf.js and Hammer.js -->
+  <!-- Load pdf.js v3.11.174 and Hammer.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
   <script>
@@ -68,16 +74,14 @@
     const hammer = new Hammer(pdfContainer, { touchAction: 'auto' });
     hammer.get('pinch').set({ enable: true });
     let initialScale = currentScale;
-
     hammer.on('pinchstart', (ev) => {
       initialScale = currentScale;
       const rect = pdfContainer.getBoundingClientRect();
-      // Include container's scroll offsets so the origin is relative to the inner content
+      // Calculate origin relative to pdfInner content
       const originX = ev.center.x - rect.left + pdfContainer.scrollLeft;
       const originY = ev.center.y - rect.top + pdfContainer.scrollTop;
       pdfInner.style.transformOrigin = `${originX}px ${originY}px`;
     });
-
     hammer.on('pinch', (ev) => {
       currentScale = initialScale * ev.scale;
       pdfInner.style.transform = `scale(${currentScale})`;
