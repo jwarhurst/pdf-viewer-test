@@ -69,6 +69,7 @@
     const pdfContainer = document.getElementById('pdf-container');
     const pdfInner = document.getElementById('pdf-inner');
     let currentScale = 1; // Will be computed based on first page width
+    const containerPadding = 20; // our left/right padding value
 
     // Define min and max scale values (optional)
     const minScale = 0.5;
@@ -79,9 +80,13 @@
       // Get the first page to compute initial scale.
       pdf.getPage(1).then(page => {
         const firstViewport = page.getViewport({ scale: 1 });
-        // Compute scale so first page fits container width.
-        currentScale = (pdfContainer.clientWidth) / firstViewport.width;
+        // Compute inner width = total width minus left+right padding.
+        const innerWidth = pdfContainer.clientWidth - (containerPadding * 2);
+        currentScale = innerWidth / firstViewport.width;
         pdfInner.style.transform = `scale(${currentScale})`;
+        // Offset pdfInner so it aligns perfectly inside the padded container.
+        pdfInner.style.left = containerPadding + 'px';
+        pdfInner.style.top = containerPadding + 'px';
 
         // Now load all pages.
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
